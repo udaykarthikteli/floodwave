@@ -29,3 +29,4 @@ shap>=0.44
 
 # HTTP client for optional live weather / reverse-geocoding lookups
 requests>=2.31
+gunicorn>=21.2 
