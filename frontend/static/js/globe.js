@@ -225,7 +225,12 @@
     globe.worldToLocal(point);
 
     const lat = 90 - (Math.acos(point.y / point.length())) * (180 / Math.PI);
-    let lon = ((Math.atan2(point.z, -point.x) * (180 / Math.PI)) - 90) % 360;
+    // Longitude: matches the equirectangular UV mapping Three.js's SphereGeometry
+    // uses internally (u=0.5 -> +x axis -> lon 0), verified against reference
+    // points at each quarter-turn of the equator. The previous formula had a
+    // sign error plus a stray "-90" offset, which put reported coordinates a
+    // consistent 90 degrees east of wherever you actually clicked.
+    let lon = -Math.atan2(point.z, point.x) * (180 / Math.PI);
     if (lon < -180) lon += 360;
     if (lon > 180) lon -= 360;
 
