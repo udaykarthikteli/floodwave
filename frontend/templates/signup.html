@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Sign Up — FloodWave{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+  <div class="glass-card auth-card reveal in-view">
+    {% include 'partials/_logo.html' %}
+    <h2 style="margin-top:16px;">Create Your Account</h2>
+    <p class="sub">Join FloodWave to save predictions and track flood risk over time.</p>
+
+    {% if error %}<div class="auth-error">{{ error }}</div>{% endif %}
+
+    <form method="POST" action="{{ url_for('signup_page') }}">
+      <div class="field">
+        <label for="full_name">Full Name</label>
+        <input type="text" id="full_name" name="full_name" required placeholder="Jane Doe">
+      </div>
+      <div class="field">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required placeholder="you@example.com">
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required placeholder="6+ characters" minlength="6">
+      </div>
+      <button type="submit" class="btn btn-block" data-flood-btn><span class="flood-fill"></span><span class="btn-label">Sign Up</span></button>
+    </form>
+    <div class="auth-foot">Already have an account? <a href="{{ url_for('login_page') }}" style="color:var(--cyan);">Log in</a></div>
+  </div>
+</div>
+{% endblock %}

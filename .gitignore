@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Flask / app
+instance/
+floodwave.db
+*.log
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+
+# Environment variables
+.env

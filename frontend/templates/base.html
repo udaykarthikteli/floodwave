@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}FloodWave — AI Flood Risk Prediction{% endblock %}</title>
+<meta name="description" content="FloodWave: AI-powered urban flood risk prediction using machine learning and real-time environmental analytics.">
+<link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/logo.svg') }}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+{% block extra_css %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+
+<nav class="navbar" id="navbar">
+  <div class="container">
+    <a href="{{ url_for('index') }}" class="nav-brand">
+      {% include 'partials/_logo.html' %}
+      FloodWave
+    </a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="{{ url_for('index') }}" class="{{ 'active' if request.path == '/' }}">Home</a></li>
+      <li><a href="{{ url_for('prediction_page') }}" class="{{ 'active' if request.path == '/prediction' }}">Prediction</a></li>
+      <li><a href="{{ url_for('dashboard_page') }}" class="{{ 'active' if request.path == '/dashboard' }}">Dashboard</a></li>
+      <li><a href="{{ url_for('about_page') }}" class="{{ 'active' if request.path == '/about' }}">About</a></li>
+      <li><a href="{{ url_for('contact_page') }}" class="{{ 'active' if request.path == '/contact' }}">Contact</a></li>
+      <li class="hide-desktop">
+        {% if user %}
+          <a href="{{ url_for('logout_page') }}">Logout</a>
+        {% else %}
+          <a href="{{ url_for('login_page') }}">Login</a>
+        {% endif %}
+      </li>
+    </ul>
+    <div class="nav-cta">
+      {% if user %}
+        <span style="font-size:0.85rem;opacity:0.85;" class="hide-mobile">Hi, {{ user.full_name.split(' ')[0] }}</span>
+        <a href="{{ url_for('logout_page') }}" class="btn btn-outline hide-mobile" data-flood-btn><span class="flood-fill"></span><span class="btn-label">Logout</span></a>
+      {% else %}
+        <a href="{{ url_for('login_page') }}" class="btn btn-outline hide-mobile" data-flood-btn><span class="flood-fill"></span><span class="btn-label">Login</span></a>
+      {% endif %}
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">☰</button>
+    </div>
+  </div>
+</nav>
+
+<main>
+{% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <a href="{{ url_for('index') }}" class="nav-brand" style="margin-bottom:14px;">
+          {% include 'partials/_logo.html' %}
+          FloodWave
+        </a>
+        <p style="opacity:0.75;font-size:0.88rem;max-width:280px;">
+          AI-powered urban flood risk prediction, built with machine learning and real-time environmental analytics.
+        </p>
+      </div>
+      <div class="footer-col">
+        <h4>Navigate</h4>
+        <ul>
+          <li><a href="{{ url_for('index') }}">Home</a></li>
+          <li><a href="{{ url_for('prediction_page') }}">Prediction</a></li>
+          <li><a href="{{ url_for('dashboard_page') }}">Dashboard</a></li>
+          <li><a href="{{ url_for('about_page') }}">About</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Resources</h4>
+        <ul>
+          <li><a href="https://github.com" target="_blank" rel="noopener">GitHub</a></li>
+          <li><a href="{{ url_for('about_page') }}">Documentation</a></li>
+          <li><a href="{{ url_for('contact_page') }}">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Account</h4>
+        <ul>
+          {% if user %}
+          <li><a href="{{ url_for('logout_page') }}">Logout</a></li>
+          {% else %}
+          <li><a href="{{ url_for('login_page') }}">Login</a></li>
+          <li><a href="{{ url_for('signup_page') }}">Sign Up</a></li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 FloodWave. All rights reserved.</span>
+      <span>Version 1.0.0</span>
+    </div>
+  </div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

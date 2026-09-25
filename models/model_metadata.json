@@ -1,0 +1,96 @@
+{
+  "best_model": "GradientBoosting",
+  "all_results": {
+    "RandomForest": {
+      "accuracy": 0.81175,
+      "precision": 0.8015672553732681,
+      "recall": 0.81175,
+      "f1": 0.7620395852062077,
+      "roc_auc": 0.7867658076967798
+    },
+    "GradientBoosting": {
+      "accuracy": 0.81775,
+      "precision": 0.7972996580160819,
+      "recall": 0.81775,
+      "f1": 0.7905968583938905,
+      "roc_auc": 0.7987968267361197
+    }
+  },
+  "classification_report": {
+    "High": {
+      "precision": 0.6268656716417911,
+      "recall": 0.267515923566879,
+      "f1-score": 0.375,
+      "support": 314.0
+    },
+    "Low": {
+      "precision": 0.6754716981132075,
+      "recall": 0.33025830258302585,
+      "f1-score": 0.4436183395291202,
+      "support": 542.0
+    },
+    "Medium": {
+      "precision": 0.8353235212440988,
+      "recall": 0.9567430025445293,
+      "f1-score": 0.8919199406968125,
+      "support": 3144.0
+    },
+    "accuracy": 0.81775,
+    "macro avg": {
+      "precision": 0.7125536303330325,
+      "recall": 0.5181724095648114,
+      "f1-score": 0.5701794267419776,
+      "support": 4000.0
+    },
+    "weighted avg": {
+      "precision": 0.7972996580160819,
+      "recall": 0.81775,
+      "f1-score": 0.7905968583938905,
+      "support": 4000.0
+    }
+  },
+  "confusion_matrix": [
+    [
+      84,
+      0,
+      230
+    ],
+    [
+      0,
+      179,
+      363
+    ],
+    [
+      50,
+      86,
+      3008
+    ]
+  ],
+  "classes": [
+    "High",
+    "Low",
+    "Medium"
+  ],
+  "feature_importance": {
+    "rainfall_mm": 0.14760434856345928,
+    "river_level_m": 0.13921942537659474,
+    "drainage_capacity_pct": 0.11273615454426694,
+    "impervious_pct": 0.11263670392927602,
+    "previous_flood_history": 0.10340661494405985,
+    "soil_moisture": 0.09775779381942469,
+    "elevation_m": 0.08865797927138755,
+    "land_use_type_Forest": 0.05297438009971747,
+    "population_density": 0.030813627463602923,
+    "wind_speed_kmh": 0.022619306844163287,
+    "humidity_pct": 0.022094218796963237,
+    "temperature_c": 0.021579848487072048,
+    "land_use_type_Agricultural": 0.011335293743384104,
+    "land_use_type_Barren": 0.010986532923265627,
+    "land_use_type_Coastal": 0.008539319489082174,
+    "land_use_type_Urban": 0.007079946179084651,
+    "land_use_type_Wetland": 0.006414162900248169,
+    "land_use_type_Suburban": 0.0035443426249472144
+  },
+  "n_train": 16000,
+  "n_test": 4000
+}

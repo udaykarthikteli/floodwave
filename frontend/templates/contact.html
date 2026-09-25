@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Contact — FloodWave{% endblock %}
+
+{% block content %}
+<section class="section" style="padding-top:140px;">
+  <div class="container">
+    <div class="section-head reveal">
+      <div class="eyebrow"><span class="dot"></span> Get In Touch</div>
+      <h2>Contact the FloodWave Team</h2>
+      <p>Questions about the platform, the model, or partnering on flood-resilience initiatives? Send us a message.</p>
+    </div>
+
+    <div class="contact-layout">
+      <div class="glass-card contact-form reveal">
+        {% if success %}<div class="auth-success">Thanks — your message has been received.</div>{% endif %}
+        {% if error %}<div class="auth-error">{{ error }}</div>{% endif %}
+        <form method="POST" action="{{ url_for('contact_page') }}">
+          <div class="field" style="margin-bottom:16px;">
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" required placeholder="Your name">
+          </div>
+          <div class="field" style="margin-bottom:16px;">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required placeholder="you@example.com">
+          </div>
+          <div class="field" style="margin-bottom:16px;">
+            <label for="subject">Subject</label>
+            <input type="text" id="subject" name="subject" placeholder="How can we help?">
+          </div>
+          <div class="field" style="margin-bottom:20px;">
+            <label for="message">Message</label>
+            <textarea id="message" name="message" class="field-textarea" required placeholder="Tell us more..."></textarea>
+          </div>
+          <button type="submit" class="btn btn-block" data-flood-btn><span class="flood-fill"></span><span class="btn-label">Send Message</span></button>
+        </form>
+      </div>
+
+      <div class="glass-card contact-info-card reveal">
+        <div class="contact-info-item">
+          <div class="ci-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M22 6l-10 7L2 6"/></svg></div>
+          <div><strong>Email</strong><p style="opacity:0.75;font-size:0.9rem;margin:4px 0 0;">contact@floodwave.example</p></div>
+        </div>
+        <div class="contact-info-item">
+          <div class="ci-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="2"><path d="M12 2v6M12 22a7 7 0 0 0 7-7c0-4-7-11-7-11S5 11 5 15a7 7 0 0 0 7 7Z"/></svg></div>
+          <div><strong>Focus</strong><p style="opacity:0.75;font-size:0.9rem;margin:4px 0 0;">Urban flood risk research &amp; disaster-preparedness tooling</p></div>
+        </div>
+        <div class="contact-info-item">
+          <div class="ci-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></div>
+          <div><strong>Response Time</strong><p style="opacity:0.75;font-size:0.9rem;margin:4px 0 0;">We reply to most messages within 1–2 business days.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

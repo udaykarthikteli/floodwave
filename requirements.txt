@@ -1,0 +1,31 @@
+# FloodWave — Python dependencies
+#
+# Version ranges (not exact pins) are used deliberately: the app trains and
+# pickles its own model.pkl using whatever compatible versions pip installs
+# on your machine (see "First run" note in README), which avoids the
+# classic "sklearn error" caused by loading a pickle saved with a different
+# scikit-learn/numpy/pandas version than the one installed locally.
+
+# Core web framework
+Flask>=3.0,<4.0
+Werkzeug>=3.0,<4.0
+
+# Data & ML
+numpy>=1.26,<3.0
+pandas>=2.0,<3.0
+scikit-learn>=1.4,<2.0
+
+# Optional gradient-boosting libraries (train_model.py auto-detects these;
+# the app runs fine without them, falling back to Random Forest /
+# Gradient Boosting from scikit-learn). Comment out any that fail to
+# install on your platform.
+xgboost>=2.0
+lightgbm>=4.0
+catboost>=1.2
+
+# Optional explainable-AI library (SHAP). If not installed, the app falls
+# back to native model feature-importance for "contributing factors".
+shap>=0.44
+
+# HTTP client for optional live weather / reverse-geocoding lookups
+requests>=2.31

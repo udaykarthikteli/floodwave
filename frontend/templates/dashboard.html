@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — FloodWave{% endblock %}
+
+{% block content %}
+<section class="section" style="padding-top:140px;">
+  <div class="container">
+    <div class="section-head reveal" style="margin-bottom:36px;">
+      <div class="eyebrow"><span class="dot"></span> Analytics</div>
+      <h2>Flood Risk Dashboard</h2>
+      <p>Prediction history, trends, and model performance at a glance.</p>
+    </div>
+
+    <div class="dash-grid" id="kpiGrid">
+      <div class="glass-card kpi-card"><div class="kpi-label">Loading…</div></div>
+    </div>
+
+    <div class="chart-grid">
+      <div class="glass-card chart-card reveal">
+        <h3>Monthly Flood Risk Trend</h3>
+        <div id="monthlyTrendChart" style="height:320px;"></div>
+      </div>
+      <div class="glass-card chart-card reveal">
+        <h3>Risk Distribution</h3>
+        <div id="riskDistChart" style="height:320px;"></div>
+      </div>
+    </div>
+
+    <div class="chart-grid">
+      <div class="glass-card chart-card reveal">
+        <h3>Model Performance Comparison</h3>
+        <div id="modelPerfChart" style="height:300px;"></div>
+      </div>
+      <div class="glass-card chart-card reveal">
+        <h3>SHAP Feature Importance</h3>
+        <div id="featureImportanceChart" style="height:300px;"></div>
+      </div>
+    </div>
+
+    <div class="glass-card chart-card reveal">
+      <h3>Recent Predictions</h3>
+      <div style="overflow-x:auto;">
+        <table class="data-table">
+          <thead>
+            <tr><th>Location</th><th>Rainfall</th><th>Risk</th><th>Confidence</th><th>Date</th></tr>
+          </thead>
+          <tbody id="predictionsTableBody">
+            <tr><td colspan="5" style="text-align:center;opacity:0.6;padding:24px;">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}Flood Prediction — FloodWave{% endblock %}
+
+{% block content %}
+<section class="section" style="padding-top:140px;">
+  <div class="container">
+    <div class="section-head reveal">
+      <div class="eyebrow"><span class="dot"></span> Prediction Engine</div>
+      <h2>Select a location, review the data, predict the risk</h2>
+      <p>Rotate the globe or fine-tune the environmental parameters manually before running the model.</p>
+    </div>
+
+    <div class="pred-layout">
+      <div class="glass-card reveal" id="globe-panel">
+        <div id="globe-canvas-wrap"></div>
+        <p class="globe-hint">Drag to rotate · Scroll to zoom · Click to select a location</p>
+        <div class="location-chip" id="locationChip">
+          <span>No location selected</span>
+        </div>
+      </div>
+
+      <div class="glass-card form-card reveal" style="position:relative;">
+        <div class="loading-overlay" id="formLoading"><div class="spinner"></div></div>
+        <h3 style="margin-bottom:18px;">Environmental Parameters</h3>
+        <form id="predictForm">
+          <div class="form-grid">
+            <div class="field">
+              <label for="f-lat">Latitude</label>
+              <input type="text" id="f-lat" readonly placeholder="Select on globe">
+            </div>
+            <div class="field">
+              <label for="f-lon">Longitude</label>
+              <input type="text" id="f-lon" readonly placeholder="Select on globe">
+            </div>
+            <div class="field">
+              <label for="f-country">Country</label>
+              <input type="text" id="f-country" placeholder="e.g. Japan">
+            </div>
+            <div class="field">
+              <label for="f-state">State / Province</label>
+              <input type="text" id="f-state" placeholder="e.g. Tokyo">
+            </div>
+            <div class="field" style="grid-column: span 2;">
+              <label for="f-city">City</label>
+              <input type="text" id="f-city" placeholder="e.g. Shibuya">
+            </div>
+
+            <div class="field">
+              <label for="f-rainfall">Rainfall (mm/24h)</label>
+              <input type="number" step="0.1" id="f-rainfall" value="45" required>
+            </div>
+            <div class="field">
+              <label for="f-temperature">Temperature (°C)</label>
+              <input type="number" step="0.1" id="f-temperature" value="24" required>
+            </div>
+            <div class="field">
+              <label for="f-humidity">Humidity (%)</label>
+              <input type="number" step="0.1" id="f-humidity" value="65" required>
+            </div>
+            <div class="field">
+              <label for="f-river">River Water Level (m)</label>
+              <input type="number" step="0.1" id="f-river" value="3.5" required>
+            </div>
+            <div class="field">
+              <label for="f-elevation">Elevation (m)</label>
+              <input type="number" step="1" id="f-elevation" value="80" required>
+            </div>
+            <div class="field">
+              <label for="f-soil">Soil Moisture (0-1)</label>
+              <input type="number" step="0.01" min="0" max="1" id="f-soil" value="0.35" required>
+            </div>
+            <div class="field">
+              <label for="f-drainage">Drainage Capacity (%)</label>
+              <input type="number" step="1" id="f-drainage" value="60" required>
+            </div>
+            <div class="field">
+              <label for="f-population">Population Density (per km²)</label>
+              <input type="number" step="1" id="f-population" value="2500" required>
+            </div>
+            <div class="field">
+              <label for="f-impervious">Impervious Surface (%)</label>
+              <input type="number" step="1" id="f-impervious" value="45" required>
+            </div>
+            <div class="field">
+              <label for="f-wind">Wind Speed (km/h)</label>
+              <input type="number" step="0.1" id="f-wind" value="12" required>
+            </div>
+            <div class="field">
+              <label for="f-landuse">Land Use Type</label>
+              <select id="f-landuse">
+                <option>Urban</option>
+                <option>Suburban</option>
+                <option>Agricultural</option>
+                <option>Forest</option>
+                <option>Wetland</option>
+                <option>Coastal</option>
+                <option>Barren</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="f-history">Previous Flood History</label>
+              <select id="f-history">
+                <option value="no">No</option>
+                <option value="yes">Yes</option>
+              </select>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-block predict-cta" id="predictBtn" data-flood-btn>
+            <span class="flood-fill"></span><span class="btn-label">Predict Flood Risk</span>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div id="result-panel" style="display:none;"></div>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+<script src="{{ url_for('static', filename='js/globe.js') }}"></script>
+<script src="{{ url_for('static', filename='js/prediction.js') }}"></script>
+{% endblock %}
