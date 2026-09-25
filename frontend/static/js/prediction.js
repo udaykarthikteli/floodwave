@@ -31,8 +31,7 @@
     fetchWeather(lat, lon);
 
     try {
-      const res = await fetch(`/api/reverse-geocode?lat=${lat}&lon=${lon}`);
-      const data = await res.json();
+      const data = await reverseGeocode(lat, lon);
       if (els.country) els.country.value = data.country || "";
       if (els.state) els.state.value = data.state || "";
       if (els.city) els.city.value = data.city || "";
@@ -52,6 +51,31 @@
       window.FloodWaveToast && window.FloodWaveToast("Location lookup failed — check your internet connection, then enter city/country manually.");
     }
   };
+
+  // ---- Reverse geocoding ---------------------------------------------------
+  // Called directly from the browser (not the Flask backend) because free
+  // reverse-geocoding providers like this one require client-side requests —
+  // server-side calls from a datacenter IP (e.g. a Render deployment) get
+  // rate-limited or blocked, which is why country/state/city could end up
+  // blank in production even though they worked locally.
+  async function reverseGeocode(lat, lon) {
+    try {
+      const res = await fetch(
+        `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`
+      );
+      if (!res.ok) throw new Error(`BigDataCloud responded ${res.status}`);
+      const d = await res.json();
+      return {
+        country: d.countryName || "",
+        state: d.principalSubdivision || "",
+        city: d.city || d.locality || "",
+      };
+    } catch (err) {
+      console.warn("[FloodWave] client-side geocode failed, falling back to server route:", err);
+      const res = await fetch(`/api/reverse-geocode?lat=${lat}&lon=${lon}`);
+      return await res.json();
+    }
+  }
 
   async function fetchWeather(lat, lon) {
     try {
