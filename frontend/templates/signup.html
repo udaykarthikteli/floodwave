@@ -1,31 +1,43 @@
 {% extends "base.html" %}
-{% block title %}{{ t('title_signup') }}{% endblock %}
+{% block title %}Sign Up — FloodWave{% endblock %}
 
 {% block content %}
 <div class="auth-wrap">
   <div class="glass-card auth-card reveal in-view">
-    {% include 'partials/_logo.html' %}
-    <h2 style="margin-top:16px;">{{ t('signup_title') }}</h2>
-    <p class="sub">{{ t('signup_sub') }}</p>
+    <div class="auth-logo">{% include 'partials/_logo.html' %}</div>
+    <h2 style="margin-top:16px;">Create Your Account</h2>
+    <p class="sub">Join FloodWave to save predictions and track flood risk over time.</p>
 
     {% if error %}<div class="auth-error">{{ error }}</div>{% endif %}
 
     <form method="POST" action="{{ url_for('signup_page') }}">
+      <input type="hidden" name="next" value="{{ next or '' }}">
+
       <div class="field">
-        <label for="full_name">{{ t('lbl_fullname') }}</label>
-        <input type="text" id="full_name" name="full_name" required placeholder="{{ t('ph_fullname') }}">
+        <label for="full_name">Full Name</label>
+        <input type="text" id="full_name" name="full_name" required autofocus
+               autocomplete="name" value="{{ full_name or '' }}"
+               placeholder="Jane Doe">
       </div>
       <div class="field">
-        <label for="email">{{ t('lbl_email') }}</label>
-        <input type="email" id="email" name="email" required placeholder="you@example.com">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required
+               autocomplete="email" value="{{ email or '' }}"
+               placeholder="you@example.com">
       </div>
       <div class="field">
-        <label for="password">{{ t('lbl_password') }}</label>
-        <input type="password" id="password" name="password" required placeholder="{{ t('ph_pw6') }}" minlength="6">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required minlength="6"
+               autocomplete="new-password" placeholder="6+ characters">
       </div>
-      <button type="submit" class="btn btn-block" data-flood-btn><span class="flood-fill"></span><span class="btn-label">{{ t('nav_signup') }}</span></button>
+      <div class="field">
+        <label for="confirm_password">Confirm Password</label>
+        <input type="password" id="confirm_password" name="confirm_password" required minlength="6"
+               autocomplete="new-password" placeholder="Re-enter password">
+      </div>
+      <button type="submit" class="btn btn-block" data-flood-btn><span class="flood-fill"></span><span class="btn-label">Sign Up</span></button>
     </form>
-    <div class="auth-foot">{{ t('signup_foot') }} <a href="{{ url_for('login_page') }}" style="color:var(--cyan);">{{ t('link_login') }}</a></div>
+    <div class="auth-foot">Already have an account? <a href="{{ url_for('login_page', next=next) }}" style="color:var(--cyan);">Log in</a></div>
   </div>
 </div>
 {% endblock %}
