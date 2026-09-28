@@ -1,31 +1,44 @@
 {% extends "base.html" %}
-{% block title %}{{ t('title_login') }}{% endblock %}
+{% block title %}Login — FloodWave{% endblock %}
 
 {% block content %}
 <div class="auth-wrap">
   <div class="glass-card auth-card reveal in-view">
-    {% include 'partials/_logo.html' %}
-    <h2 style="margin-top:16px;">{{ t('login_title') }}</h2>
-    <p class="sub">{{ t('login_sub') }}</p>
+    <div class="auth-logo">{% include 'partials/_logo.html' %}</div>
+    <h2 style="margin-top:16px;">Welcome Back</h2>
+    <p class="sub">Log in to access your prediction history and dashboard.</p>
 
-    {% if error %}<div class="auth-error">{{ error }}</div>{% endif %}
+    {% if error %}
+    <div class="auth-error">
+      {{ error }}
+      {% if show_signup %}<a href="{{ url_for('signup_page', next=next) }}">Create an account</a>{% endif %}
+    </div>
+    {% endif %}
 
     <form method="POST" action="{{ url_for('login_page') }}">
+      <!-- keeps the page the user originally wanted -->
+      <input type="hidden" name="next" value="{{ next or '' }}">
+
       <div class="field">
-        <label for="email">{{ t('lbl_email') }}</label>
-        <input type="email" id="email" name="email" required placeholder="you@example.com">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required autofocus
+               autocomplete="email" value="{{ email or '' }}"
+               placeholder="you@example.com">
       </div>
       <div class="field">
-        <label for="password">{{ t('lbl_password') }}</label>
-        <input type="password" id="password" name="password" required placeholder="••••••••">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required
+               autocomplete="current-password" placeholder="••••••••">
       </div>
       <div class="remember-row">
-        <label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" name="remember"> {{ t('remember') }}</label>
-        <a href="#" style="color:var(--cyan);">{{ t('forgot') }}</a>
+        <label style="display:flex;align-items:center;gap:8px;">
+          <input type="checkbox" name="remember"> Remember Me
+        </label>
+        <a href="#" style="color:var(--cyan);">Forgot Password?</a>
       </div>
-      <button type="submit" class="btn btn-block" data-flood-btn><span class="flood-fill"></span><span class="btn-label">{{ t('btn_login') }}</span></button>
+      <button type="submit" class="btn btn-block" data-flood-btn><span class="flood-fill"></span><span class="btn-label">Log In</span></button>
     </form>
-    <div class="auth-foot">{{ t('login_foot') }} <a href="{{ url_for('signup_page') }}" style="color:var(--cyan);">{{ t('link_signup') }}</a></div>
+    <div class="auth-foot">Don't have an account? <a href="{{ url_for('signup_page', next=next) }}" style="color:var(--cyan);">Sign up</a></div>
   </div>
 </div>
 {% endblock %}
