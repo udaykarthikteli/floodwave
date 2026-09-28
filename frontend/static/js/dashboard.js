@@ -15,6 +15,16 @@
     margin: { t: 20, r: 20, b: 40, l: 44 },
   };
 
+  // Translate a raw model feature name (e.g. "rainfall_mm", "land_use_type_Urban")
+  function featLabel(name) {
+    if (name.indexOf("land_use_type_") === 0) {
+      const lu = name.replace("land_use_type_", "");
+      return FW_T("feat_land_use", { value: FW_T("landuse_" + lu) });
+    }
+    const key = "feat_" + name;
+    return FW_T(key) !== key ? FW_T(key) : name;
+  }
+
   async function load() {
     const res = await fetch("/api/dashboard-data");
     const data = await res.json();
@@ -34,10 +44,10 @@
       : null;
 
     const kpis = [
-      { label: "Total Predictions", value: total, sub: "All-time recorded" },
-      { label: "High-Risk Alerts", value: high, sub: "Requiring urgent action" },
-      { label: "Best Model", value: (data.model_metadata && data.model_metadata.best_model) || "—", sub: "Auto-selected" },
-      { label: "Model Accuracy", value: acc ? `${(acc.accuracy * 100).toFixed(1)}%` : "—", sub: "Held-out test set" },
+      { label: FW_T("kpi_total"), value: total, sub: FW_T("kpi_total_sub") },
+      { label: FW_T("kpi_high"), value: high, sub: FW_T("kpi_high_sub") },
+      { label: FW_T("kpi_model"), value: (data.model_metadata && data.model_metadata.best_model) || "—", sub: FW_T("kpi_model_sub") },
+      { label: FW_T("kpi_acc"), value: acc ? `${(acc.accuracy * 100).toFixed(1)}%` : "—", sub: FW_T("kpi_acc_sub") },
     ];
     const wrap = document.getElementById("kpiGrid");
     if (!wrap) return;
@@ -53,9 +63,10 @@
   function renderRiskDistribution(dist) {
     const el = document.getElementById("riskDistChart");
     if (!el || typeof Plotly === "undefined") return;
-    const labels = Object.keys(dist || {});
+    const keys = Object.keys(dist || {});
+    const labels = keys.map(k => FW_T("risk_" + k));
     const values = Object.values(dist || {});
-    const colors = labels.map(l => ({ Low: "#34d399", Medium: "#fbbf24", High: "#f87171" }[l] || "#48CAE4"));
+    const colors = keys.map(l => ({ Low: "#34d399", Medium: "#fbbf24", High: "#f87171" }[l] || "#48CAE4"));
 
     Plotly.newPlot(el, [{
       type: "pie", labels, values, hole: 0.55,
@@ -74,7 +85,7 @@
     const traces = series.map(s => ({
       x: months,
       y: months.map(m => (trend[m] && trend[m][s]) || 0),
-      name: s,
+      name: FW_T("risk_" + s),
       type: "bar",
       marker: { color: colors[s] },
     }));
@@ -115,7 +126,7 @@
     const entries = Object.entries(meta.feature_importance).slice(0, 8).reverse();
     Plotly.newPlot(el, [{
       x: entries.map(e => e[1]),
-      y: entries.map(e => e[0]),
+      y: entries.map(e => featLabel(e[0])),
       type: "bar",
       orientation: "h",
       marker: { color: "#48CAE4" },
@@ -130,16 +141,16 @@
     const tbody = document.getElementById("predictionsTableBody");
     if (!tbody) return;
     if (!rows || !rows.length) {
-      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;opacity:0.6;padding:24px;">No predictions yet — run one from the Prediction page.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;opacity:0.6;padding:24px;">${FW_T("dash_empty")}</td></tr>`;
       return;
     }
     tbody.innerHTML = rows.map(r => `
       <tr>
         <td>${(r.city || "—")}${r.country ? ", " + r.country : ""}</td>
         <td>${r.rainfall_mm != null ? r.rainfall_mm + " mm" : "—"}</td>
-        <td><span class="tag ${r.predicted_risk}">${r.predicted_risk}</span></td>
+        <td><span class="tag ${r.predicted_risk}">${FW_T("risk_" + r.predicted_risk)}</span></td>
         <td>${r.confidence != null ? r.confidence + "%" : "—"}</td>
-        <td>${new Date(r.created_at).toLocaleDateString()}</td>
+        <td>${new Date(r.created_at).toLocaleDateString(FW_LOCALE)}</td>
       </tr>
     `).join("");
   }
