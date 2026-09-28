@@ -9,10 +9,12 @@ import os
 import random
 from datetime import datetime, timedelta
 
+from urllib.parse import urlparse
+
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 
 from backend.config import Config
-from backend import database, auth, ml_predictor
+from backend import database, auth, ml_predictor, i18n
 
 try:
     import requests
@@ -29,6 +31,36 @@ app = Flask(
 app.config.from_object(Config)
 
 database.init_db()
+
+
+# ---------------------------------------------------------------------------
+# Internationalisation (English / Telugu / Hindi)
+# ---------------------------------------------------------------------------
+
+@app.context_processor
+def inject_i18n():
+    """Make t(), lang and the language list available in every template."""
+    lang = i18n.get_lang()
+    return {
+        "lang": lang,
+        "LANGS": i18n.LANGS,
+        "t": lambda key, **kw: i18n.translate(key, lang, **kw),
+        "js_i18n": i18n.js_strings(lang),
+    }
+
+
+@app.route("/set-language/<lang>")
+def set_language(lang):
+    """Store the visitor's language in a cookie and send them back."""
+    if lang not in i18n.SUPPORTED:
+        lang = i18n.DEFAULT
+    target = url_for("index")
+    ref = request.referrer
+    if ref and urlparse(ref).netloc == request.host:  # same-site only
+        target = ref
+    resp = redirect(target)
+    resp.set_cookie(i18n.COOKIE_NAME, lang, max_age=60 * 60 * 24 * 365, samesite="Lax")
+    return resp
 
 
 # ---------------------------------------------------------------------------
@@ -65,7 +97,7 @@ def contact_page():
         if name and email and message:
             database.save_contact_message(name, email, subject, message)
             return render_template("contact.html", user=auth.current_user(), success=True)
-        return render_template("contact.html", user=auth.current_user(), error="Please fill in all required fields.")
+        return render_template("contact.html", user=auth.current_user(), error=i18n.translate("err_contact_fill"))
     return render_template("contact.html", user=auth.current_user())
 
 
@@ -78,7 +110,7 @@ def login_page():
         if user and auth.verify_password(password, user["password_hash"]):
             auth.login_user(user)
             return redirect(url_for("dashboard_page"))
-        return render_template("login.html", error="Invalid email or password.")
+        return render_template("login.html", error=i18n.translate("err_login"))
     return render_template("login.html")
 
 
@@ -90,11 +122,11 @@ def signup_page():
         password = request.form.get("password", "")
 
         if not full_name or not email or len(password) < 6:
-            return render_template("signup.html", error="Please fill all fields; password must be 6+ characters.")
+            return render_template("signup.html", error=i18n.translate("err_signup_fill"))
 
         user_id = database.create_user(full_name, email, auth.hash_password(password))
         if user_id is None:
-            return render_template("signup.html", error="An account with that email already exists.")
+            return render_template("signup.html", error=i18n.translate("err_email_exists"))
 
         user = database.get_user_by_id(user_id)
         auth.login_user(user)
@@ -115,10 +147,11 @@ def logout_page():
 @app.route("/api/predict", methods=["POST"])
 def api_predict():
     data = request.get_json(force=True, silent=True) or {}
+    lang = data.get("lang") if data.get("lang") in i18n.SUPPORTED else i18n.get_lang()
     try:
-        result = ml_predictor.predict(data)
+        result = ml_predictor.predict(data, lang=lang)
     except Exception as e:
-        return jsonify({"error": f"Prediction failed: {str(e)}"}), 500
+        return jsonify({"error": i18n.translate("err_predict", lang, err=str(e))}), 500
 
     record = dict(data)
     record.update({
