@@ -25,7 +25,7 @@
     if (els.lat) els.lat.value = lat.toFixed(4);
     if (els.lon) els.lon.value = lon.toFixed(4);
     if (els.chip) {
-      els.chip.innerHTML = `<span>Lat ${lat.toFixed(2)}</span><span>Lon ${lon.toFixed(2)}</span><span>Resolving location…</span>`;
+      els.chip.innerHTML = `<span>${FW_T("lbl_lat")} ${lat.toFixed(2)}</span><span>${FW_T("lbl_lon")} ${lon.toFixed(2)}</span><span>${FW_T("js_resolving")}</span>`;
     }
 
     fetchWeather(lat, lon);
@@ -38,17 +38,17 @@
 
       const label = [data.city, data.state, data.country].filter(Boolean).join(", ");
       if (els.chip) {
-        els.chip.innerHTML = `<span>Lat ${lat.toFixed(2)}</span><span>Lon ${lon.toFixed(2)}</span><span>${label || "Ocean / unresolved — enter manually"}</span>`;
+        els.chip.innerHTML = `<span>${FW_T("lbl_lat")} ${lat.toFixed(2)}</span><span>${FW_T("lbl_lon")} ${lon.toFixed(2)}</span><span>${label || FW_T("js_ocean")}</span>`;
       }
       if (!label && window.FloodWaveToast) {
-        window.FloodWaveToast("No address found for this point (likely open ocean) — you can type it in manually.");
+        window.FloodWaveToast(FW_T("js_no_address"));
       }
     } catch (err) {
       console.error("[FloodWave] reverse-geocode request failed:", err);
       if (els.chip) {
-        els.chip.innerHTML = `<span>Lat ${lat.toFixed(2)}</span><span>Lon ${lon.toFixed(2)}</span><span>Couldn't reach geocoding service — enter manually</span>`;
+        els.chip.innerHTML = `<span>${FW_T("lbl_lat")} ${lat.toFixed(2)}</span><span>${FW_T("lbl_lon")} ${lon.toFixed(2)}</span><span>${FW_T("js_geo_unreach")}</span>`;
       }
-      window.FloodWaveToast && window.FloodWaveToast("Location lookup failed — check your internet connection, then enter city/country manually.");
+      window.FloodWaveToast && window.FloodWaveToast(FW_T("js_geo_fail"));
     }
   };
 
@@ -86,11 +86,11 @@
       setIfEmpty("f-humidity", data.humidity_pct);
       setIfEmpty("f-wind", data.wind_speed_kmh);
       if (window.FloodWaveToast) {
-        window.FloodWaveToast(`Environmental data auto-filled (${data.source})`);
+        window.FloodWaveToast(FW_T("js_weather_ok", { source: data.source }));
       }
     } catch (err) {
       console.error("[FloodWave] weather request failed:", err);
-      window.FloodWaveToast && window.FloodWaveToast("Couldn't fetch weather data — you can enter values manually.");
+      window.FloodWaveToast && window.FloodWaveToast(FW_T("js_weather_fail"));
     }
   }
 
@@ -120,6 +120,7 @@
         wind_speed_kmh: parseFloat(getVal("f-wind")),
         land_use_type: getVal("f-landuse"),
         previous_flood_history: getVal("f-history") === "yes" ? 1 : 0,
+        lang: window.FW_LANG,
       };
 
       setLoading(true);
@@ -133,10 +134,10 @@
         if (res.ok) {
           renderResult(data);
         } else {
-          window.FloodWaveToast && window.FloodWaveToast(data.error || "Prediction failed");
+          window.FloodWaveToast && window.FloodWaveToast(data.error || FW_T("js_predict_fail"));
         }
       } catch (err) {
-        window.FloodWaveToast && window.FloodWaveToast("Network error — please try again");
+        window.FloodWaveToast && window.FloodWaveToast(FW_T("js_network"));
       } finally {
         setLoading(false);
       }
@@ -168,7 +169,7 @@
     const breakdownRows = Object.entries(data.probability_breakdown || {})
       .map(([k, v]) => `
         <div class="factor-bar">
-          <div class="fb-label"><span>${k}</span><span>${v}%</span></div>
+          <div class="fb-label"><span>${FW_T("risk_" + k)}</span><span>${v}%</span></div>
           <div class="fb-track"><div class="fb-fill" style="width:${v}%;background:${riskColor(k)}"></div></div>
         </div>`).join("");
 
@@ -185,17 +186,28 @@
     const actionsRows = (data.recommended_actions || [])
       .map(a => `<li>${a}</li>`).join("");
 
+    // Flood alert banner - text comes from the server already in the user's language.
+    const alertHtml = data.alert ? `
+      <div class="alert-banner ${data.alert.level}" role="alert" aria-live="assertive">
+        <div class="alert-title">${data.alert.title}</div>
+        <p class="alert-msg">${data.alert.message}</p>
+        <p class="alert-note">${data.alert.disclaimer}</p>
+      </div>` : "";
+
     els.resultPanel.innerHTML = `
+      ${alertHtml}
       <div class="result-header">
         <div>
-          <h3 style="margin-bottom:4px;">Prediction Result</h3>
-          <span style="font-size:0.8rem;opacity:0.7;">Model: ${data.model_used} · Explainability: ${data.explainability_method}</span>
+          <h3 style="margin-bottom:4px;">${FW_T("res_title")}</h3>
+          <span style="font-size:0.8rem;opacity:0.7;">${FW_T("res_model")}: ${data.model_used} · ${FW_T("res_explain")}: ${data.explainability_method}</span>
         </div>
-        <span class="risk-badge ${data.overall_risk}">${data.overall_risk} · ${data.flood_probability} Flood Probability</span>
+        <span class="risk-badge ${data.overall_risk}">${FW_T("res_badge", {
+          overall: data.overall_label || data.overall_risk,
+          prob: data.risk_label || data.flood_probability })}</span>
       </div>
       <div class="result-grid">
         <div class="glass-card result-card">
-          <h4>Confidence</h4>
+          <h4>${FW_T("res_confidence")}</h4>
           <div class="gauge-wrap">
             <svg viewBox="0 0 80 80">
               <circle cx="40" cy="40" r="34" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="8"/>
@@ -208,11 +220,11 @@
           <div style="margin-top:18px;">${breakdownRows}</div>
         </div>
         <div class="glass-card result-card">
-          <h4>Contributing Factors</h4>
-          ${factorsRows || '<p style="opacity:0.7;font-size:0.85rem;">No factor data available.</p>'}
+          <h4>${FW_T("res_factors")}</h4>
+          ${factorsRows || `<p style="opacity:0.7;font-size:0.85rem;">${FW_T("res_nofactors")}</p>`}
         </div>
         <div class="glass-card result-card">
-          <h4>Recommended Actions</h4>
+          <h4>${FW_T("res_actions")}</h4>
           <ul class="action-list">${actionsRows}</ul>
         </div>
       </div>
