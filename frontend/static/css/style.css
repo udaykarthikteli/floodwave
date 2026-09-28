@@ -24,8 +24,9 @@
   --radius-md: 18px;
   --radius-lg: 28px;
 
-  --font-display: "Sora", "Segoe UI", sans-serif;
-  --font-body: "Inter", "Segoe UI", sans-serif;
+  /* Latin glyphs use Sora/Inter; Telugu & Devanagari fall through to Noto per-glyph */
+  --font-display: "Sora", "Noto Sans Telugu", "Noto Sans Devanagari", "Segoe UI", sans-serif;
+  --font-body: "Inter", "Noto Sans Telugu", "Noto Sans Devanagari", "Segoe UI", sans-serif;
 
   --ease-fluid: cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -480,3 +481,40 @@ textarea.field-textarea {
   position: absolute; border-radius: 50%; background: rgba(255,255,255,0.5);
   pointer-events: none; filter: blur(0.5px);
 }
+
+
+/* =========================================================================
+   Multilingual (EN / తెలుగు / हिन्दी): switcher, Indic typography, flood alert
+   ========================================================================= */
+.lang-switch { display: inline-flex; border: 1px solid var(--glass-border); border-radius: 999px;
+  background: var(--glass-bg); overflow: hidden; }
+.lang-switch a { padding: 5px 12px; font-size: 0.82rem; font-weight: 600; opacity: 0.8; line-height: 1.4;
+  transition: background 0.25s ease, opacity 0.25s ease; }
+.lang-switch a:hover { opacity: 1; }
+.lang-switch a.active { background: var(--aqua); color: var(--ink); opacity: 1; }
+@media (max-width: 480px) {
+  .nav-cta { gap: 8px; }
+  .lang-switch a { padding: 4px 8px; font-size: 0.74rem; }
+}
+
+/* Telugu / Devanagari glyphs have tall marks - give them room */
+html[lang="te"] body, html[lang="hi"] body { line-height: 1.75; }
+html[lang="te"] h1, html[lang="hi"] h1,
+html[lang="te"] h2, html[lang="hi"] h2,
+html[lang="te"] h3, html[lang="hi"] h3,
+html[lang="te"] .hero h1, html[lang="hi"] .hero h1 { line-height: 1.35; letter-spacing: 0; }
+html[lang="te"] .nav-links a, html[lang="hi"] .nav-links a,
+html[lang="te"] .btn, html[lang="hi"] .btn { letter-spacing: 0; }
+
+/* Flood alert banner shown above the prediction result */
+.alert-banner { border-radius: var(--radius-md); padding: 20px 24px; margin-bottom: 22px;
+  border: 1px solid; border-left-width: 8px; backdrop-filter: blur(10px); }
+.alert-banner .alert-title { font-family: var(--font-display); font-weight: 800; font-size: 1.5rem; margin-bottom: 6px; }
+.alert-banner .alert-msg { font-size: 1.12rem; margin: 0 0 8px; }
+.alert-banner .alert-note { font-size: 0.8rem; opacity: 0.75; margin: 0; }
+.alert-banner.Low { background: rgba(16,185,129,0.16); border-color: rgba(16,185,129,0.5); }
+.alert-banner.Low .alert-title { color: #34d399; }
+.alert-banner.Medium { background: rgba(245,158,11,0.16); border-color: rgba(245,158,11,0.55); }
+.alert-banner.Medium .alert-title { color: #fbbf24; }
+.alert-banner.High { background: rgba(239,68,68,0.20); border-color: rgba(239,68,68,0.6); }
+.alert-banner.High .alert-title { color: #f87171; }
