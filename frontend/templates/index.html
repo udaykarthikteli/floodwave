@@ -1,58 +1,58 @@
 {% extends "base.html" %}
-{% block title %}FloodWave — Predict Tomorrow's Floods Today{% endblock %}
+{% block title %}{{ t('title_home') }}{% endblock %}
 
 {% block content %}
 <section class="hero">
   <div id="hero-canvas-wrap"></div>
   <div class="hero-scrim"></div>
   <div class="hero-content container">
-    <div class="eyebrow"><span class="dot"></span> AI-Powered Flood Intelligence</div>
-    <h1>Predict <span class="wave-underline">Tomorrow's Floods</span> Today</h1>
+    <div class="eyebrow"><span class="dot"></span> {{ t('home_eyebrow') }}</div>
+    <h1>{{ t('home_h1_pre') }}<span class="wave-underline">{{ t('home_h1_wave') }}</span>{{ t('home_h1_post') }}</h1>
     <p class="hero-subtitle">
-      AI-powered flood prediction using machine learning, environmental analytics, and real-time weather intelligence.
+      {{ t('home_subtitle') }}
     </p>
     <div class="hero-actions">
-      <a href="{{ url_for('prediction_page') }}" class="btn" data-flood-btn><span class="flood-fill"></span><span class="btn-label">Predict Flood Risk</span></a>
-      <a href="#learn-more" class="btn btn-outline" data-flood-btn><span class="flood-fill"></span><span class="btn-label">Learn More</span></a>
+      <a href="{{ url_for('prediction_page') }}" class="btn" data-flood-btn><span class="flood-fill"></span><span class="btn-label">{{ t('cta_predict') }}</span></a>
+      <a href="#learn-more" class="btn btn-outline" data-flood-btn><span class="flood-fill"></span><span class="btn-label">{{ t('cta_learn') }}</span></a>
     </div>
     <div class="hero-stats">
-      <div class="stat"><strong>4</strong><span>ML Models Compared</span></div>
-      <div class="stat"><strong>12+</strong><span>Environmental Inputs</span></div>
-      <div class="stat"><strong>SHAP</strong><span>Explainable AI</span></div>
-      <div class="stat"><strong>Real-Time</strong><span>Weather Intelligence</span></div>
+      <div class="stat"><strong>4</strong><span>{{ t('stat1') }}</span></div>
+      <div class="stat"><strong>12+</strong><span>{{ t('stat2') }}</span></div>
+      <div class="stat"><strong>SHAP</strong><span>{{ t('stat3') }}</span></div>
+      <div class="stat"><strong>{{ t('stat4_v') }}</strong><span>{{ t('stat4') }}</span></div>
     </div>
   </div>
-  <div class="scroll-cue"><span>Scroll</span><span class="chevron"></span></div>
+  <div class="scroll-cue"><span>{{ t('scroll') }}</span><span class="chevron"></span></div>
 </section>
 
 <section class="section" id="learn-more">
   <div class="container">
     <div class="section-head reveal">
-      <div class="eyebrow"><span class="dot"></span> How It Works</div>
-      <h2>From raw environmental data to actionable flood intelligence</h2>
-      <p>FloodWave combines satellite-derived precipitation patterns, terrain data, and urban infrastructure metrics into a single explainable risk score.</p>
+      <div class="eyebrow"><span class="dot"></span> {{ t('how_eyebrow') }}</div>
+      <h2>{{ t('how_h2') }}</h2>
+      <p>{{ t('how_p') }}</p>
     </div>
     <div class="feature-grid">
       <div class="glass-card feature-card reveal">
         <div class="feature-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 2v6M12 22a7 7 0 0 0 7-7c0-4-7-11-7-11S5 11 5 15a7 7 0 0 0 7 7Z"/></svg>
         </div>
-        <h3>Select a Location</h3>
-        <p>Rotate the interactive 3D globe and click anywhere to auto-fill latitude, longitude, country, and city.</p>
+        <h3>{{ t('f1_t') }}</h3>
+        <p>{{ t('f1_p') }}</p>
       </div>
       <div class="glass-card feature-card reveal">
         <div class="feature-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M3 12h4l3-9 4 18 3-9h4"/></svg>
         </div>
-        <h3>Analyze Environmental Data</h3>
-        <p>Rainfall, river levels, soil moisture, drainage capacity, and 8 more variables feed a tuned ensemble model.</p>
+        <h3>{{ t('f2_t') }}</h3>
+        <p>{{ t('f2_p') }}</p>
       </div>
       <div class="glass-card feature-card reveal">
         <div class="feature-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/></svg>
         </div>
-        <h3>Get Explainable Results</h3>
-        <p>See a color-coded risk verdict, confidence score, SHAP-driven contributing factors, and recommended actions.</p>
+        <h3>{{ t('f3_t') }}</h3>
+        <p>{{ t('f3_p') }}</p>
       </div>
     </div>
   </div>
@@ -61,31 +61,31 @@
 <section class="section">
   <div class="container">
     <div class="section-head reveal">
-      <div class="eyebrow"><span class="dot"></span> Built For Reliability</div>
-      <h2>An enterprise-grade prediction pipeline</h2>
-      <p>Multiple gradient-boosting models are trained and benchmarked automatically — the best performer is deployed.</p>
+      <div class="eyebrow"><span class="dot"></span> {{ t('rel_eyebrow') }}</div>
+      <h2>{{ t('rel_h2') }}</h2>
+      <p>{{ t('rel_p') }}</p>
     </div>
     <div class="feature-grid">
       <div class="glass-card feature-card reveal">
         <div class="feature-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M4 19h16M4 15l4-6 4 3 4-8 4 5"/></svg>
         </div>
-        <h3>Multi-Source Data</h3>
-        <p>Modeled on precipitation, terrain, land-use, and river-discharge characteristics from major public datasets.</p>
+        <h3>{{ t('r1_t') }}</h3>
+        <p>{{ t('r1_p') }}</p>
       </div>
       <div class="glass-card feature-card reveal">
         <div class="feature-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M4 9h16M9 4v16"/></svg>
         </div>
-        <h3>Live Dashboard</h3>
-        <p>Track prediction history, risk distribution, monthly trends, and model performance in one analytics view.</p>
+        <h3>{{ t('r2_t') }}</h3>
+        <p>{{ t('r2_p') }}</p>
       </div>
       <div class="glass-card feature-card reveal">
         <div class="feature-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 1v22M5 8l7-7 7 7M5 16l7 7 7-7"/></svg>
         </div>
-        <h3>Actionable Guidance</h3>
-        <p>Every prediction pairs a risk tier with clear, tier-specific recommended actions for residents and authorities.</p>
+        <h3>{{ t('r3_t') }}</h3>
+        <p>{{ t('r3_p') }}</p>
       </div>
     </div>
   </div>
@@ -94,9 +94,9 @@
 <section class="section">
   <div class="container">
     <div class="glass-card reveal" style="padding:56px;text-align:center;">
-      <h2 style="margin-bottom:14px;">Ready to see your flood risk?</h2>
-      <p style="max-width:520px;margin:0 auto 30px;opacity:0.8;">Select any location on the globe and get an AI-driven flood risk assessment in seconds.</p>
-      <a href="{{ url_for('prediction_page') }}" class="btn" data-flood-btn><span class="flood-fill"></span><span class="btn-label">Start a Prediction</span></a>
+      <h2 style="margin-bottom:14px;">{{ t('cta_h2') }}</h2>
+      <p style="max-width:520px;margin:0 auto 30px;opacity:0.8;">{{ t('cta_p') }}</p>
+      <a href="{{ url_for('prediction_page') }}" class="btn" data-flood-btn><span class="flood-fill"></span><span class="btn-label">{{ t('cta_start') }}</span></a>
     </div>
   </div>
 </section>
