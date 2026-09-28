@@ -54,6 +54,16 @@
   }
   document.querySelectorAll(".btn").forEach(attachFloodEffect);
 
+  // ---- i18n helpers -------------------------------------------------------
+  // window.FW_LANG / window.FW_I18N are injected by base.html.
+  // FW_T("key", {name: "x"}) -> translated string ("{name}" placeholders filled).
+  window.FW_T = function (key, vars) {
+    let text = (window.FW_I18N && window.FW_I18N[key]) || key;
+    if (vars) Object.keys(vars).forEach(k => { text = text.split("{" + k + "}").join(vars[k]); });
+    return text;
+  };
+  window.FW_LOCALE = { en: "en-IN", te: "te-IN", hi: "hi-IN" }[window.FW_LANG] || "en-IN";
+
   // ---- Toast ------------------------------------------------------------
   window.FloodWaveToast = function (message, duration) {
     const toast = document.getElementById("toast");
