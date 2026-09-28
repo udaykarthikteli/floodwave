@@ -1,31 +1,31 @@
 {% extends "base.html" %}
-{% block title %}Sign Up — FloodWave{% endblock %}
+{% block title %}{{ t('title_signup') }}{% endblock %}
 
 {% block content %}
 <div class="auth-wrap">
   <div class="glass-card auth-card reveal in-view">
     {% include 'partials/_logo.html' %}
-    <h2 style="margin-top:16px;">Create Your Account</h2>
-    <p class="sub">Join FloodWave to save predictions and track flood risk over time.</p>
+    <h2 style="margin-top:16px;">{{ t('signup_title') }}</h2>
+    <p class="sub">{{ t('signup_sub') }}</p>
 
     {% if error %}<div class="auth-error">{{ error }}</div>{% endif %}
 
     <form method="POST" action="{{ url_for('signup_page') }}">
       <div class="field">
-        <label for="full_name">Full Name</label>
-        <input type="text" id="full_name" name="full_name" required placeholder="Jane Doe">
+        <label for="full_name">{{ t('lbl_fullname') }}</label>
+        <input type="text" id="full_name" name="full_name" required placeholder="{{ t('ph_fullname') }}">
       </div>
       <div class="field">
-        <label for="email">Email</label>
+        <label for="email">{{ t('lbl_email') }}</label>
         <input type="email" id="email" name="email" required placeholder="you@example.com">
       </div>
       <div class="field">
-        <label for="password">Password</label>
-        <input type="password" id="password" name="password" required placeholder="6+ characters" minlength="6">
+        <label for="password">{{ t('lbl_password') }}</label>
+        <input type="password" id="password" name="password" required placeholder="{{ t('ph_pw6') }}" minlength="6">
       </div>
-      <button type="submit" class="btn btn-block" data-flood-btn><span class="flood-fill"></span><span class="btn-label">Sign Up</span></button>
+      <button type="submit" class="btn btn-block" data-flood-btn><span class="flood-fill"></span><span class="btn-label">{{ t('nav_signup') }}</span></button>
     </form>
-    <div class="auth-foot">Already have an account? <a href="{{ url_for('login_page') }}" style="color:var(--cyan);">Log in</a></div>
+    <div class="auth-foot">{{ t('signup_foot') }} <a href="{{ url_for('login_page') }}" style="color:var(--cyan);">{{ t('link_login') }}</a></div>
   </div>
 </div>
 {% endblock %}
