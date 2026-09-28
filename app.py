@@ -1,20 +1,11 @@
-"""
-FloodWave - Main Application Entry Point
-===========================================
-Run with:  python app.py
-Then open: http://127.0.0.1:5000
-"""
-
 import os
 import random
 from datetime import datetime, timedelta
 
-from urllib.parse import urlparse
-
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 
 from backend.config import Config
-from backend import database, auth, ml_predictor, i18n
+from backend import database, auth, ml_predictor, forecast
 
 try:
     import requests
@@ -34,33 +25,14 @@ database.init_db()
 
 
 # ---------------------------------------------------------------------------
-# Internationalisation (English / Telugu / Hindi)
+# Helpers
 # ---------------------------------------------------------------------------
 
-@app.context_processor
-def inject_i18n():
-    """Make t(), lang and the language list available in every template."""
-    lang = i18n.get_lang()
-    return {
-        "lang": lang,
-        "LANGS": i18n.LANGS,
-        "t": lambda key, **kw: i18n.translate(key, lang, **kw),
-        "js_i18n": i18n.js_strings(lang),
-    }
-
-
-@app.route("/set-language/<lang>")
-def set_language(lang):
-    """Store the visitor's language in a cookie and send them back."""
-    if lang not in i18n.SUPPORTED:
-        lang = i18n.DEFAULT
-    target = url_for("index")
-    ref = request.referrer
-    if ref and urlparse(ref).netloc == request.host:  # same-site only
-        target = ref
-    resp = redirect(target)
-    resp.set_cookie(i18n.COOKIE_NAME, lang, max_age=60 * 60 * 24 * 365, samesite="Lax")
-    return resp
+def _safe_next(target):
+    """Only allow redirects to paths on this site (prevents open redirects)."""
+    if target and target.startswith("/") and not target.startswith("//"):
+        return target
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -73,11 +45,13 @@ def index():
 
 
 @app.route("/prediction")
+@auth.login_required_page          # <-- login required
 def prediction_page():
     return render_template("prediction.html", user=auth.current_user())
 
 
 @app.route("/dashboard")
+@auth.login_required_page          # <-- login required
 def dashboard_page():
     return render_template("dashboard.html", user=auth.current_user())
 
@@ -97,41 +71,72 @@ def contact_page():
         if name and email and message:
             database.save_contact_message(name, email, subject, message)
             return render_template("contact.html", user=auth.current_user(), success=True)
-        return render_template("contact.html", user=auth.current_user(), error=i18n.translate("err_contact_fill"))
+        return render_template("contact.html", user=auth.current_user(), error="Please fill in all required fields.")
     return render_template("contact.html", user=auth.current_user())
 
 
 @app.route("/login", methods=["GET", "POST"])
 def login_page():
+    if session.get("user_id"):                      # already logged in
+        return redirect(url_for("dashboard_page"))
+
+    next_url = _safe_next(request.values.get("next"))
+
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
         user = database.get_user_by_email(email)
-        if user and auth.verify_password(password, user["password_hash"]):
-            auth.login_user(user)
-            return redirect(url_for("dashboard_page"))
-        return render_template("login.html", error=i18n.translate("err_login"))
-    return render_template("login.html")
+
+        if user is None:
+            # No account with this email in floodwave.db
+            return render_template("login.html",
+                                   error="No account found with that email.",
+                                   show_signup=True, email=email, next=next_url)
+
+        if not auth.verify_password(password, user["password_hash"]):
+            return render_template("login.html",
+                                   error="Incorrect password. Please try again.",
+                                   email=email, next=next_url)
+
+        auth.login_user(user)
+        session.permanent = bool(request.form.get("remember"))  # Remember Me
+        return redirect(next_url or url_for("dashboard_page"))
+
+    return render_template("login.html", next=next_url)
 
 
 @app.route("/signup", methods=["GET", "POST"])
 def signup_page():
+    if session.get("user_id"):                      # already logged in
+        return redirect(url_for("dashboard_page"))
+
+    next_url = _safe_next(request.values.get("next"))
+
     if request.method == "POST":
         full_name = request.form.get("full_name", "").strip()
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
+        confirm = request.form.get("confirm_password", "")
 
-        if not full_name or not email or len(password) < 6:
-            return render_template("signup.html", error=i18n.translate("err_signup_fill"))
+        def fail(msg):
+            return render_template("signup.html", error=msg,
+                                   full_name=full_name, email=email, next=next_url)
+
+        if not full_name or not email:
+            return fail("Please fill in all fields.")
+        if len(password) < 6:
+            return fail("Password must be at least 6 characters.")
+        if password != confirm:
+            return fail("Passwords do not match.")
 
         user_id = database.create_user(full_name, email, auth.hash_password(password))
         if user_id is None:
-            return render_template("signup.html", error=i18n.translate("err_email_exists"))
+            return fail("An account with that email already exists.")
 
-        user = database.get_user_by_id(user_id)
-        auth.login_user(user)
-        return redirect(url_for("dashboard_page"))
-    return render_template("signup.html")
+        auth.login_user(database.get_user_by_id(user_id))
+        return redirect(next_url or url_for("dashboard_page"))
+
+    return render_template("signup.html", next=next_url)
 
 
 @app.route("/logout")
@@ -147,11 +152,10 @@ def logout_page():
 @app.route("/api/predict", methods=["POST"])
 def api_predict():
     data = request.get_json(force=True, silent=True) or {}
-    lang = data.get("lang") if data.get("lang") in i18n.SUPPORTED else i18n.get_lang()
     try:
-        result = ml_predictor.predict(data, lang=lang)
+        result = ml_predictor.predict(data)
     except Exception as e:
-        return jsonify({"error": i18n.translate("err_predict", lang, err=str(e))}), 500
+        return jsonify({"error": f"Prediction failed: {str(e)}"}), 500
 
     record = dict(data)
     record.update({
@@ -165,6 +169,28 @@ def api_predict():
         pass  # never block the prediction response on logging failure
 
     return jsonify(result)
+
+
+@app.route("/api/forecast", methods=["POST"])
+def api_forecast():
+    """7-day flood risk forecast: Open-Meteo weather + the trained model.
+    Body: the same JSON the prediction form sends (latitude/longitude are
+    required; the other fields are the location's static characteristics)."""
+    data = request.get_json(force=True, silent=True) or {}
+    try:
+        lat = float(data.get("latitude"))
+        lon = float(data.get("longitude"))
+    except (TypeError, ValueError):
+        return jsonify({"error": "Select a location on the globe first (latitude/longitude missing)."}), 400
+    if not (-90 <= lat <= 90 and -180 <= lon <= 180):
+        return jsonify({"error": "Latitude/longitude out of range."}), 400
+
+    try:
+        return jsonify(forecast.build_forecast(data, lat, lon))
+    except forecast.ForecastError as e:
+        return jsonify({"error": str(e)}), 502
+    except Exception as e:
+        return jsonify({"error": f"Forecast failed: {str(e)}"}), 500
 
 
 @app.route("/api/weather")
