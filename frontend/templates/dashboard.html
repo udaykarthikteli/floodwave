@@ -37,7 +37,12 @@
     </div>
 
     <div class="glass-card chart-card reveal">
-      <h3>{{ t('chart_recent') }}</h3>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:14px;">
+        <h3 style="margin:0;">{{ t('chart_recent') }}</h3>
+        <a class="btn" href="{{ url_for('api_export_predictions') }}" download style="padding:10px 22px;font-size:0.85rem;">
+          <span class="btn-label">&#128202; {{ t('dash_export') }}</span>
+        </a>
+      </div>
       <div style="overflow-x:auto;">
         <table class="data-table">
           <thead>
