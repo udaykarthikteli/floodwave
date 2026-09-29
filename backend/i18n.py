@@ -256,6 +256,7 @@ S = {
     "chart_perf": ("Model Performance Comparison", "మోడల్ పనితీరు పోలిక", "मॉडल प्रदर्शन तुलना"),
     "chart_shap": ("SHAP Feature Importance", "SHAP ఫీచర్ ప్రాముఖ్యత", "SHAP फ़ीचर महत्व"),
     "chart_recent": ("Recent Predictions", "ఇటీవలి అంచనాలు", "हाल के पूर्वानुमान"),
+    "dash_export": ("Export to Excel", "ఎక్సెల్‌కు ఎగుమతి చేయండి", "एक्सेल में एक्सपोर्ट करें"),
     "th_location": ("Location", "ప్రదేశం", "स्थान"),
     "th_rainfall": ("Rainfall", "వర్షపాతం", "वर्षा"),
     "th_risk": ("Risk", "ప్రమాదం", "जोखिम"),
