@@ -1,11 +1,14 @@
 import os
+import io
 import random
 from datetime import datetime, timedelta
 
-from flask import Flask, render_template, request, jsonify, session, redirect, url_for
+from urllib.parse import urlparse
+
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for, send_file, make_response
 
 from backend.config import Config
-from backend import database, auth, ml_predictor, forecast
+from backend import database, auth, ml_predictor, forecast, i18n
 
 try:
     import requests
@@ -33,6 +36,37 @@ def _safe_next(target):
     if target and target.startswith("/") and not target.startswith("//"):
         return target
     return None
+
+
+# ---------------------------------------------------------------------------
+# Language (English / Telugu / Hindi)
+# ---------------------------------------------------------------------------
+
+@app.context_processor
+def inject_i18n():
+    """Makes t(), lang, LANGS and js_i18n available in every template."""
+    lang = i18n.get_lang()
+    return {
+        "lang": lang,
+        "LANGS": i18n.LANGS,
+        "t": lambda key, **kw: i18n.translate(key, lang, **kw),
+        "js_i18n": i18n.js_strings(lang),
+    }
+
+
+@app.route("/lang/<lang>")
+def set_language(lang):
+    if lang not in i18n.SUPPORTED:
+        lang = i18n.DEFAULT
+    # go back to the page the user was on (same site only)
+    back = _safe_next(request.args.get("next"))
+    if not back and request.referrer:
+        ref = urlparse(request.referrer)
+        if ref.netloc == request.host:
+            back = ref.path + (("?" + ref.query) if ref.query else "")
+    resp = make_response(redirect(back or url_for("index")))
+    resp.set_cookie(i18n.COOKIE_NAME, lang, max_age=60 * 60 * 24 * 365, samesite="Lax")
+    return resp
 
 
 # ---------------------------------------------------------------------------
@@ -168,6 +202,14 @@ def api_predict():
     except Exception:
         pass  # never block the prediction response on logging failure
 
+    # Localised alert text / labels for the UI (English, Telugu or Hindi)
+    lang = i18n.get_lang()
+    level = result["flood_probability"]
+    result["alert"] = i18n.alert_for(level, lang)
+    result["recommended_actions"] = i18n.recommendations_for(level, lang)
+    result["overall_label"] = i18n.translate("overall_" + result["overall_risk"], lang)
+    result["risk_label"] = i18n.translate("risk_" + level, lang)
+
     return jsonify(result)
 
 
@@ -264,6 +306,159 @@ def api_reverse_geocode():
             pass
 
     return jsonify({"country": None, "state": None, "city": None})
+
+
+def _recent_for_dashboard(user_id):
+    """The same rows the dashboard 'Recent Predictions' table shows."""
+    recent = database.get_recent_predictions(limit=100, user_id=user_id)
+    if not recent:
+        recent = _generate_demo_predictions()
+    return recent[:20]
+
+
+def _style_sheet(ws, header_fill="0077B6"):
+    """Blue bold header, sensible column widths, frozen top row, filter."""
+    from openpyxl.styles import Font, PatternFill, Alignment
+    from openpyxl.utils import get_column_letter
+
+    for cell in ws[1]:
+        cell.font = Font(bold=True, color="FFFFFF")
+        cell.fill = PatternFill("solid", fgColor=header_fill)
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    for i in range(1, ws.max_column + 1):
+        letter = get_column_letter(i)
+        longest = max((len(str(c.value)) for c in list(ws[letter])[:200] if c.value is not None), default=8)
+        ws.column_dimensions[letter].width = min(longest + 3, 32)
+    ws.freeze_panes = "A2"
+    ws.auto_filter.ref = ws.dimensions
+
+
+def _paint_risk(cell):
+    """High = red, Medium = yellow, Low = green (Excel cell colouring)."""
+    from openpyxl.styles import Font, PatternFill
+    styles = {
+        "High":   ("EF4444", "FFFFFF"),   # red,    white text
+        "Medium": ("FACC15", "000000"),   # yellow, black text
+        "Low":    ("22C55E", "FFFFFF"),   # green,  white text
+    }
+    key = str(cell.value).strip().capitalize() if cell.value is not None else ""
+    if key in styles:
+        bg, fg = styles[key]
+        cell.fill = PatternFill("solid", fgColor=bg)
+        cell.font = Font(bold=True, color=fg)
+
+
+@app.route("/api/export-predictions")
+@auth.login_required_api
+def api_export_predictions():
+    """Download the project data as one Excel file:
+       Sheet 1 'Predictions' - every prediction stored in floodwave.db
+       Sheet 2 'Dataset'     - the training data (data/dataset.csv)"""
+    import csv
+    from openpyxl import Workbook
+
+    wb = Workbook()
+
+    # ---- Sheet 1: Recent Predictions (exactly what the dashboard table shows)
+    rs = wb.active
+    rs.title = "Recent Predictions"
+    rs.append(["Location", "Rainfall (mm)", "Risk", "Confidence (%)", "Date"])
+    for r in _recent_for_dashboard(session.get("user_id")):
+        location = (r.get("city") or "-") + (", " + r["country"] if r.get("country") else "")
+        rs.append([
+            location, r.get("rainfall_mm"), r.get("predicted_risk"),
+            r.get("confidence"), str(r.get("created_at") or "")[:10],
+        ])
+        _paint_risk(rs.cell(row=rs.max_row, column=3))
+    _style_sheet(rs)
+    rs.column_dimensions["A"].width = 30
+
+    # ---- Sheet 2: all predictions in the database --------------------------
+    ws = wb.create_sheet("All Predictions")
+    columns = [
+        ("Date (UTC)", "created_at"), ("User", "_user"),
+        ("City", "city"), ("Country", "country"),
+        ("Latitude", "latitude"), ("Longitude", "longitude"),
+        ("Predicted Risk", "predicted_risk"), ("Confidence (%)", "confidence"),
+        ("Rainfall (mm)", "rainfall_mm"), ("Temperature (C)", "temperature_c"),
+        ("Humidity (%)", "humidity_pct"), ("River Level (m)", "river_level_m"),
+        ("Elevation (m)", "elevation_m"), ("Soil Moisture", "soil_moisture"),
+        ("Drainage Capacity (%)", "drainage_capacity_pct"),
+        ("Population Density", "population_density"),
+        ("Impervious Surface (%)", "impervious_pct"),
+        ("Wind Speed (km/h)", "wind_speed_kmh"), ("Land Use", "land_use_type"),
+        ("Previous Flood History", "previous_flood_history"),
+    ]
+    ws.append([c[0] for c in columns])
+
+    risk_col = [c[1] for c in columns].index("predicted_risk") + 1
+    user_names = {}
+
+    all_rows = database.get_all_predictions()         # all accounts
+    demo = not all_rows
+    if demo:
+        # Nothing saved yet: export the same sample rows the dashboard shows
+        all_rows = sorted(_generate_demo_predictions(),
+                          key=lambda x: x["created_at"], reverse=True)
+
+    for r in all_rows:
+        uid = r.get("user_id")
+        if demo:
+            r["_user"] = "Demo data (sample)"
+        else:
+            if uid not in user_names:
+                u = database.get_user_by_id(uid) if uid else None
+                user_names[uid] = u["full_name"] if u else "-"
+            r["_user"] = user_names[uid]
+
+        values = []
+        for _, key in columns:
+            v = r.get(key)
+            if key == "created_at" and v:
+                v = str(v).replace("T", " ")[:19]
+            elif key == "previous_flood_history" and v is not None:
+                v = "Yes" if v else "No"
+            values.append(v)
+        ws.append(values)
+        _paint_risk(ws.cell(row=ws.max_row, column=risk_col))
+    _style_sheet(ws)
+
+    # ---- Sheet 2: training dataset -----------------------------------------
+    csv_path = os.path.join(BASE_DIR, "data", "dataset.csv")
+    if os.path.exists(csv_path):
+        ds = wb.create_sheet("Dataset")
+        with open(csv_path, newline="", encoding="utf-8") as f:
+            reader = csv.reader(f)
+            header = next(reader, None)
+            if header:
+                ds.append(header)
+            for row in reader:
+                ds.append([_to_number(x) for x in row])
+        _style_sheet(ds, header_fill="023E8A")
+        if header and "flood_risk" in header:
+            risk_idx = header.index("flood_risk") + 1
+            for r in range(2, ds.max_row + 1):
+                _paint_risk(ds.cell(row=r, column=risk_idx))
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    filename = f"floodwave_v4_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    return send_file(
+        buf, as_attachment=True, download_name=filename,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+
+
+def _to_number(x):
+    """CSV text -> int/float where possible so Excel treats it as a number."""
+    try:
+        return int(x)
+    except ValueError:
+        try:
+            return float(x)
+        except ValueError:
+            return x
 
 
 @app.route("/api/dashboard-data")
