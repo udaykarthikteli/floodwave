@@ -191,7 +191,7 @@ def _contributing_factors_shap(bundle, X_input, predicted_class_idx):
         return None
 
 
-def predict(data):
+def predict(data, lang=None, **kwargs):
     global _bundle
     try:
         bundle = load_model()
