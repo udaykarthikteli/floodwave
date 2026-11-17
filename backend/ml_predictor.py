@@ -12,6 +12,9 @@ Loads the trained model bundle (models/model.pkl) and exposes a single
 
 import os
 import pickle
+import threading
+import time
+import importlib.util
 import numpy as np
 import pandas as pd
 
@@ -19,14 +22,14 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODEL_PATH = os.path.join(BASE_DIR, "models", "model.pkl")
 
 _bundle = None
+_shap = None                # the shap module, imported lazily in warmup()
 _shap_explainer = None
-_shap_available = False
+_shap_ready = False         # True only once warmup() has built the explainer
+_load_lock = threading.RLock()
 
-try:
-    import shap  # noqa
-    _shap_available = True
-except ImportError:
-    _shap_available = False
+# Cheap check only - the (slow) real import of shap happens in the background
+# warmup thread, never inside a user request.
+_shap_available = importlib.util.find_spec("shap") is not None
 
 
 RISK_TO_OVERALL = {
@@ -120,28 +123,31 @@ def load_model():
     if _bundle is not None:
         return _bundle
 
-    try:
-        with open(MODEL_PATH, "rb") as f:
-            _bundle = pickle.load(f)
-        return _bundle
-    except Exception as e:
-        print(f"[FloodWave] Failed to load model.pkl: {e}")
-        _retrain_locally()
-        # retry once after retraining
-        with open(MODEL_PATH, "rb") as f:
-            _bundle = pickle.load(f)
-        return _bundle
+    with _load_lock:                      # warmup thread + request can't both load/retrain
+        if _bundle is not None:
+            return _bundle
+        try:
+            with open(MODEL_PATH, "rb") as f:
+                _bundle = pickle.load(f)
+            return _bundle
+        except Exception as e:
+            print(f"[FloodWave] Failed to load model.pkl: {e}")
+            _retrain_locally()
+            # retry once after retraining
+            with open(MODEL_PATH, "rb") as f:
+                _bundle = pickle.load(f)
+            return _bundle
 
 
 def _get_shap_explainer(bundle):
     global _shap_explainer
-    if not _shap_available:
+    if _shap is None:
         return None
     if _shap_explainer is not None:
         return _shap_explainer
     try:
         classifier = bundle["pipeline"].named_steps["classifier"]
-        _shap_explainer = shap.TreeExplainer(classifier)
+        _shap_explainer = _shap.TreeExplainer(classifier)
     except Exception:
         _shap_explainer = None
     return _shap_explainer
@@ -216,7 +222,7 @@ def predict(data, lang=None, **kwargs):
     confidence = float(proba[pred_idx]) * 100
 
     factors = None
-    if _shap_available:
+    if _shap_ready:
         factors = _contributing_factors_shap(bundle, X_input, pred_idx)
     if not factors:
         factors = _contributing_factors_native(bundle, None)
@@ -234,6 +240,38 @@ def predict(data, lang=None, **kwargs):
         "contributing_factors": factors,
         "recommended_actions": RECOMMENDATIONS.get(predicted_label, RECOMMENDATIONS["Medium"]),
         "model_used": bundle.get("model_name", "Unknown"),
-        "explainability_method": "SHAP" if (_shap_available and factors) else "Feature Importance",
+        "explainability_method": "SHAP" if (_shap_ready and factors) else "Feature Importance",
     }
     return result
+
+
+def warmup():
+    """Runs once in a background thread at server start so the FIRST click on
+    'Predict Flood Risk' is as fast as every later one: loads (or retrains)
+    the model, imports SHAP, builds the explainer and does a dummy prediction."""
+    global _shap, _shap_ready
+    t0 = time.time()
+    try:
+        bundle = load_model()
+        if _shap_available:
+            try:
+                import shap as _s
+                _shap = _s
+                X = _build_input_frame(bundle, {})
+                _get_shap_explainer(bundle)
+                _contributing_factors_shap(bundle, X, 0)   # triggers one-time JIT
+                _shap_ready = _shap_explainer is not None
+            except Exception as e:
+                print(f"[FloodWave] SHAP unavailable, using feature importance: {e}")
+        print(f"[FloodWave] Model warm-up finished in {time.time() - t0:.1f}s "
+              f"(explainability: {'SHAP' if _shap_ready else 'Feature Importance'})")
+    except Exception as e:
+        print(f"[FloodWave] Warm-up failed: {e}")
+
+
+# Start warm-up automatically. In Flask debug mode the reloader imports this file
+# twice (watcher + server); only warm up in the process that actually serves.
+if (os.environ.get("WERKZEUG_RUN_MAIN") == "true"
+        or os.environ.get("FLOODWAVE_DEBUG", "True") != "True") \
+        and os.environ.get("FLOODWAVE_NO_WARMUP") != "1":
+    threading.Thread(target=warmup, daemon=True).start()
